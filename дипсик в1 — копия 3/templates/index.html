@@ -1,0 +1,53 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Система учёта диагностических работ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+  <header class="main-header">
+    <div class="header-content">
+      <h1><i class="fas fa-building"></i> Система учёта диагностики жилых помещений</h1>
+      <button id="authButton" class="auth-button">Войти</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="hero-section">
+      <div class="hero-overlay">
+        <h2>Профессиональный контроль диагностических работ</h2>
+        <p>Оптимизируйте процесс проверки жилых помещений с нашей системой</p>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <i class="fas fa-clipboard-check"></i>
+        <h3>Учёт обходов</h3>
+        <p>Точная фиксация всех проверенных квартир с детализацией</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Аналитика</h3>
+        <p>Наглядные графики и отчёты по выполненной работе</p>
+      </div>
+      <div class="feature-card">
+        <i class="fas fa-users"></i>
+        <h3>Контроль бригад</h3>
+        <p>Мониторинг работы всех подразделений в реальном времени</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="main-footer">
+    <p>© 2025 Система учёта диагностических работ. Все права защищены.</p>
+  </footer>
+
+  <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>

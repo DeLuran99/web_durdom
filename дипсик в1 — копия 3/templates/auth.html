@@ -1,0 +1,34 @@
+<!-- templates/auth.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Авторизация</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+  <div class="auth-container">
+    <h2>Вход в систему</h2>
+    <form id="authForm">
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" required>
+      </div>
+      <button type="submit" class="btn">Войти</button>
+      <div class="links">
+        <a href="{{ url_for('register_page') }}">Регистрация</a>
+        <a href="{{ url_for('reset_password') }}">Забыли пароль?</a>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>

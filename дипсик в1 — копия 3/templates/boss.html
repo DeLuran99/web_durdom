@@ -1,0 +1,92 @@
+<!-- templates/boss.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель руководства</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/boss.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="boss-page">
+  <header class="work-header">
+    <h1><i class="fas fa-user-tie"></i> Панель руководства</h1>
+    <button id="logoutButton" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i> Выйти
+    </button>
+  </header>
+  <main class="work-container">
+    <section class="chart-controls">
+      <h2><i class="fas fa-chart-bar"></i> Аналитика работы бригад</h2>
+      <div class="date-range-container">
+        <div class="date-card">
+          <div class="form-group">
+            <label for="startDate"><i class="fas fa-calendar-day"></i> Начальная дата:</label>
+            <input type="date" id="startDate">
+          </div>
+        </div>
+        <div class="date-card">
+          <div class="form-group">
+            <label for="endDate"><i class="fas fa-calendar-day"></i> Конечная дата:</label>
+            <input type="date" id="endDate">
+          </div>
+        </div>
+      </div>
+      <div class="brigade-selector">
+        <label><i class="fas fa-users"></i> Выбор бригадира:</label>
+        <div class="brigade-options" id="foremenList">
+          <div class="brigade-option selected" data-foreman-id="all">Все бригадиры</div>
+        </div>
+      </div>
+      <button id="updateChart" class="btn"><i class="fas fa-sync-alt"></i> Обновить данные</button>
+    </section>
+    <section class="summary-section">
+      <h2><i class="fas fa-list-ol"></i> Сводная статистика</h2>
+      <div class="summary-stats">
+        <div class="summary-card">
+          <h3><i class="fas fa-calendar-alt"></i> Период</h3>
+          <p id="periodRange">-</p>
+        </div>
+        <div class="summary-card">
+          <h3><i class="fas fa-home"></i> Домов</h3>
+          <p id="totalHouses">0</p>
+        </div>
+        <div class="summary-card">
+          <h3><i class="fas fa-door-closed"></i> Квартир всего</h3>
+          <p id="totalApartments">0</p>
+        </div>
+        <div class="summary-card">
+          <h3><i class="fas fa-door-open"></i> Квартир проверено</h3>
+          <p id="totalDone">0</p>
+        </div>
+      </div>
+    </section>
+    <section class="chart-section">  
+      <div class="chart-container">
+        <canvas id="apartmentsChart"></canvas>
+      </div>
+    </section>
+    <section class="details-section">
+      <h2><i class="fas fa-table"></i> Детализация по дням</h2>
+      <div class="table-responsive">
+        <table id="detailsTable">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Бригадир</th>
+              <th>Домов</th>
+              <th>Квартир всего</th>
+              <th>Проверено</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/boss.js') }}"></script>
+</body>
+</html>
