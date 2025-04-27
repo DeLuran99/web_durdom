@@ -167,6 +167,7 @@ def get_inspections():
     start = request.args.get('start')
     end = request.args.get('end')
     foreman_id_param = request.args.get('foreman_id')  # Фильтрация по foreman_id
+    address = request.args.get('address')  # Получаем адрес из параметров запроса
 
     # Если это роль boss, то устанавливаем даты по умолчанию
     if user_role == 'boss' and not start and not end:
@@ -176,18 +177,29 @@ def get_inspections():
 
     # Фильтруем данные по выбранным датам
     q = Inspection.query
+
+    # Фильтрация для роли boss
     if user_role == 'boss':
         if start and end:
             q = q.filter(Inspection.date.between(start, end))
         if foreman_id_param and foreman_id_param != 'all':
             foreman_id_param = int(foreman_id_param)  # ID бригадира
             q = q.filter_by(foreman_id=foreman_id_param)
+
+    # Фильтрация для роли foreman
     elif user_role == 'foreman':
         q = q.filter_by(foreman_id=foreman_id)
         if start and end:
             q = q.filter(Inspection.date.between(start, end))
 
+    # Фильтрация по адресу (если передан адрес)
+    if address:
+        q = q.filter(Inspection.address == address)
+
+    # Получаем все записи
     recs = q.all()
+
+    # Формируем ответ с данными по проверкам
     return jsonify([{
         'date': r.date.isoformat(),
         'foreman_id': r.foreman_id - 1,  # Вычитаем 1, чтобы ID начиналось с 1
@@ -197,12 +209,13 @@ def get_inspections():
         'total_done': r.total_done
     } for r in recs])
 
+
 @app.route('/api/inspections/<int:id>', methods=['DELETE'])
 def delete_inspection(id):
     insp = Inspection.query.get_or_404(id)
     if (session.get('role') == 'boss' or
         (session.get('role') == 'foreman' and insp.foreman_id == session['user_id'])):
-        db.session.delete(insp)
+        db.session.delete(insp.id)
         commit_with_retry()  # Использование повторных попыток для удаления
         return jsonify({'success': True})
     return jsonify({'error': 'Нет доступа'}), 403
