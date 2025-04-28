@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
         div.innerHTML = `
         <div class="address-info">
           <strong>${address}</strong><br>
-          Квартир: ${totalDoneAllTime}/${totalApartments} (${percentageAllTime}%) + ${totalDone} / ${totalApartments} (${percentage}%)
+          Квартир: ${totalDoneAllTime}/${totalApartments} (${percentageAllTime}%) + ${totalDone} 
         </div>
         <div class="address-actions">
           <button class="delete-btn" data-id="${address}">Удалить</button>

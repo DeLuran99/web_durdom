@@ -85,33 +85,42 @@ document.addEventListener("DOMContentLoaded", () => {
       0
     );
 
+    // Сортируем данные по датам
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     const labels = [...new Set(data.map((r) => r.date))];
     const foremenData = {};
 
+    // Группировка данных по бригадам и датам
     data.forEach((r) => {
+      const key = `${r.date}-${r.foreman_id}`; // Группировка по дате и бригаде
       if (!foremenData[r.foreman_id]) {
-        foremenData[r.foreman_id] = { dates: [], done: [] };
+        foremenData[r.foreman_id] = {
+          foremanId: r.foreman_id,
+          dates: {},
+        };
       }
-      foremenData[r.foreman_id].dates.push(r.date);
-      foremenData[r.foreman_id].done.push(r.total_done);
+      if (!foremenData[r.foreman_id].dates[r.date]) {
+        foremenData[r.foreman_id].dates[r.date] = 0;
+      }
+      foremenData[r.foreman_id].dates[r.date] += r.total_done; // Суммируем только проверенные квартиры за день
     });
 
-    // Обновление графика для каждой бригады
-    const datasets = Object.keys(foremenData).map((foremanId, index) => ({
-      label: `Бригада ${foremanId}`,
-      data: labels.map((date) => {
-        const index = foremenData[foremanId].dates.indexOf(date);
-        return index !== -1 ? foremenData[foremanId].done[index] : 0;
-      }),
-      borderColor: getColor(index), // Получение уникального цвета для каждой бригады
-      backgroundColor: getColor(index, true),
-      fill: true,
-    }));
+    // Уникальные наборы данных для графика
+    const datasets = Object.keys(foremenData).map((foremanId, index) => {
+      const foreman = foremenData[foremanId];
+      return {
+        label: `Бригада ${foreman.foremanId}`,
+        data: labels.map((date) => foreman.dates[date] || 0),
+        borderColor: getColor(index),
+        backgroundColor: getColor(index, true),
+        fill: true,
+      };
+    });
 
-    // Применяем форматирование даты для отображения по оси X
     const formattedLabels = labels.map((date) => formatDisplayDate(date));
 
-    // Теперь строим график с отформатированными датами для оси X
+    // Перерисовываем график
     if (chart) chart.destroy();
     chart = new Chart(
       document.getElementById("apartmentsChart").getContext("2d"),
@@ -146,41 +155,44 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
 
-    // Обновление таблицы
+    // Обновление таблицы с детализацией по дням
     const tbody = document.querySelector("#detailsTable tbody");
     tbody.innerHTML = "";
 
-    // Создаем объект для хранения уникальных адресов для каждой бригады
-    const foremanAddresses = {};
+    // Проходим по данным и группируем их по бригадам и датам
+    const groupedByDayAndForeman = {};
 
-    // Проходим по всем данным
     data.forEach((r) => {
-      // Инициализируем массив для адресов бригады, если еще не существует
-      if (!foremanAddresses[r.foreman_id]) {
-        foremanAddresses[r.foreman_id] = new Set();
+      const key = `${r.date}-${r.foreman_id}`;
+      if (!groupedByDayAndForeman[key]) {
+        groupedByDayAndForeman[key] = {
+          foremanId: r.foreman_id,
+          date: r.date,
+          totalHouses: new Set(),
+          totalApartments: 0,
+          totalDone: 0,
+        };
       }
+      groupedByDayAndForeman[key].totalHouses.add(r.address);
+      groupedByDayAndForeman[key].totalApartments += r.total_apartments;
+      groupedByDayAndForeman[key].totalDone += r.total_done;
+    });
 
-      // Добавляем адрес в Set для текущей бригады
-      foremanAddresses[r.foreman_id].add(r.address);
-
-      // Создаем строку таблицы для текущего обхода
+    // Заполнение таблицы
+    Object.values(groupedByDayAndForeman).forEach((group) => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${formatDisplayDate(r.date)}</td> 
-        <td>Бригада ${r.foreman_id}</td>
-        <td>${
-          foremanAddresses[r.foreman_id].size
-        }</td>  <!-- Количество уникальных адресов (домов) -->
-        <td>${r.total_apartments}</td>
-        <td>${r.total_done}</td>`;
 
-      // Добавляем строку в таблицу
+      tr.innerHTML = `
+        <td>${formatDisplayDate(group.date)}</td>
+        <td>Бригада ${group.foremanId}</td>
+        <td>${group.totalHouses.size}</td>
+        <td>${group.totalApartments}</td>
+        <td>${group.totalDone}</td>`;
       tbody.appendChild(tr);
     });
   }
 
   function getColor(index, isBackground = false) {
-    // Используем более глубокие оттенки
     const colors = ["#005B96", "#006C99", "#008CBA", "#00A6B2", "#33B5E5"]; // Насыщенные синие и голубые оттенки
     return isBackground
       ? colors[index % colors.length] + "80"
