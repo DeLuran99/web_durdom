@@ -1,4 +1,5 @@
 import os
+from sqlalchemy import and_     
 from time import sleep
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -162,44 +163,40 @@ def save_inspection():
 
 @app.route('/api/inspections', methods=['GET'])
 def get_inspections():
-    user_role = session.get('role')
-    foreman_id = session.get('user_id')  # Получаем ID текущего пользователя
-    start = request.args.get('start')
-    end = request.args.get('end')
-    foreman_id_param = request.args.get('foreman_id')  # Фильтрация по foreman_id
-    address = request.args.get('address')  # Получаем адрес из параметров запроса
+    user_role      = session.get('role')
+    foreman_id     = session.get('user_id')
+    start  = request.args.get('start')
+    end    = request.args.get('end')
+    single = request.args.get('date')  # Параметр даты для фильтрации
+    date_until = request.args.get('date_until')  # Параметр до выбранной даты
+    foreman_id_param = request.args.get('foreman_id')
+    address = request.args.get('address')
 
-    # Если это роль boss, то устанавливаем даты по умолчанию
-    if user_role == 'boss' and not start and not end:
-        start, end = get_start_end_of_month()
-        start = start.date().isoformat()
-        end = end.date().isoformat()
-
-    # Фильтруем данные по выбранным датам
     q = Inspection.query
 
-    # Фильтрация для роли boss
-    if user_role == 'boss':
-        if start and end:
-            q = q.filter(Inspection.date.between(start, end))
-        if foreman_id_param and foreman_id_param != 'all':
-            foreman_id_param = int(foreman_id_param)  # ID бригадира
-            q = q.filter_by(foreman_id=foreman_id_param)
+    # Если указан параметр date_until, фильтруем данные до этой даты включительно
+    if date_until:
+        q = q.filter(Inspection.date <= date.fromisoformat(date_until))
 
-    # Фильтрация для роли foreman
+    # Для роли boss
+    if user_role == 'boss':
+        if start and end:  # Фильтруем по диапазону дат
+            q = q.filter(Inspection.date.between(start, end))
+
+        if foreman_id_param and foreman_id_param != 'all':  # Фильтрация по бригадиру
+            q = q.filter_by(foreman_id=int(foreman_id_param))
+
+    # Для роли foreman
     elif user_role == 'foreman':
         q = q.filter_by(foreman_id=foreman_id)
-        if start and end:
-            q = q.filter(Inspection.date.between(start, end))
+        if single:  # Фильтруем по выбранной дате
+            q = q.filter(Inspection.date == date.fromisoformat(single))
 
-    # Фильтрация по адресу (если передан адрес)
+    # Фильтрация по адресу
     if address:
-        q = q.filter(Inspection.address == address)
+        q = q.filter_by(address=address)
 
-    # Получаем все записи
-    recs = q.all()
-
-    # Формируем ответ с данными по проверкам
+    recs = q.all()  # Получаем все записи, удовлетворяющие фильтрам
     return jsonify([{
         'date': r.date.isoformat(),
         'foreman_id': r.foreman_id - 1,  # Вычитаем 1, чтобы ID начиналось с 1
@@ -208,7 +205,6 @@ def get_inspections():
         'total_apartments': r.total_apartments,
         'total_done': r.total_done
     } for r in recs])
-
 
 @app.route('/api/inspections/<int:id>', methods=['DELETE'])
 def delete_inspection(id):

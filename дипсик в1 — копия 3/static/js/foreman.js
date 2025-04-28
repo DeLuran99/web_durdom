@@ -29,6 +29,18 @@ document.addEventListener("DOMContentLoaded", () => {
       .addEventListener("change", updateDailyStats);
   }
 
+  // Получение данных по проверкам за выбранный день
+  async function fetchInspections(date) {
+    const resp = await fetch(`/api/inspections?date=${date}`); // Передаем параметр date в запрос
+    return resp.ok ? resp.json() : [];
+  }
+
+  // Получение данных по проверкам до выбранной даты включительно
+  async function fetchInspectionsUntilDate(date) {
+    const resp = await fetch(`/api/inspections?date_until=${date}`); // Передаем параметр до выбранной даты
+    return resp.ok ? resp.json() : [];
+  }
+
   // Открытие модального окна для адресов
   document
     .getElementById("showAddressesBtn")
@@ -36,8 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const day = document.getElementById("daySelect").value; // Получаем дату из поля
       console.log("Выбранная дата для статистики:", day); // Логируем выбранную дату
 
-      // Получаем данные о проверках за выбранный день
-      const list = await fetchInspections(day); // Фильтруем записи по выбранной дате
+      // Получаем данные о проверках до выбранной даты (включительно)
+      const allTimeData = await fetchInspectionsUntilDate(day); // Данные до выбранной даты
+
+      // Получаем данные только за выбранный день для отображения в модальном окне
+      const list = await fetchInspections(day); // Данные только за выбранный день
+
       const addressesList = document.getElementById("addressesList");
       addressesList.innerHTML = ""; // Очищаем список
 
@@ -46,24 +62,37 @@ document.addEventListener("DOMContentLoaded", () => {
       // Группировка данных по адресу и суммирование проверенных квартир
       const groupedAddresses = {};
 
+      // Суммируем данные до выбранной даты (включительно)
+      allTimeData.forEach((ins) => {
+        if (!groupedAddresses[ins.address]) {
+          groupedAddresses[ins.address] = {
+            totalDone: 0,
+            totalApartments: 0,
+            totalDoneAllTime: 0, // Суммируем все проверенные квартиры до выбранной даты
+          };
+        }
+
+        // Суммируем проверенные квартиры до выбранной даты
+        groupedAddresses[ins.address].totalDoneAllTime += ins.total_done;
+        // Сохраняем общее количество квартир для этого адреса
+        groupedAddresses[ins.address].totalApartments = ins.total_apartments;
+      });
+
+      // Добавляем данные за выбранный день
       list.forEach((ins) => {
         if (!groupedAddresses[ins.address]) {
           groupedAddresses[ins.address] = {
             totalDone: 0,
             totalApartments: 0,
-            totalDoneAllTime: 0, // Суммируем все проверенные квартиры за все время
+            totalDoneAllTime: 0, // Суммируем все проверенные квартиры до выбранной даты
           };
         }
 
-        // Суммируем только проверенные квартиры за выбранный день
+        // Суммируем данные за выбранный день
         groupedAddresses[ins.address].totalDone += ins.total_done;
-        // Сохраняем общее количество квартир для этого адреса
-        groupedAddresses[ins.address].totalApartments = ins.total_apartments;
-        // Суммируем все проверенные квартиры по этому адресу за все время
-        groupedAddresses[ins.address].totalDoneAllTime += ins.total_done;
       });
 
-      // Добавляем адреса и их данные в модальное окно
+      // Добавляем адреса и их данные в модальное окно, если данные есть за выбранный день
       for (let address in groupedAddresses) {
         const { totalDone, totalApartments, totalDoneAllTime } =
           groupedAddresses[address];
@@ -73,18 +102,21 @@ document.addEventListener("DOMContentLoaded", () => {
           100
         ).toFixed(1);
 
-        const div = document.createElement("div");
-        div.className = "address-item";
-        div.innerHTML = `
+        // Если для этого адреса есть данные за выбранный день (totalDone > 0), то отображаем их
+        if (totalDone > 0) {
+          const div = document.createElement("div");
+          div.className = "address-item";
+          div.innerHTML = `
         <div class="address-info">
           <strong>${address}</strong><br>
-          Квартир: ${totalDoneAllTime}/${totalApartments} (${percentageAllTime}%) + ${totalDone} 
+          Квартир: ${totalDoneAllTime}/${totalApartments} (${percentageAllTime}%) + ${totalDone} (за день) 
         </div>
         <div class="address-actions">
           <button class="delete-btn" data-id="${address}">Удалить</button>
         </div>
       `;
-        addressesList.appendChild(div);
+          addressesList.appendChild(div);
+        }
       }
 
       // Обработчик для кнопки удаления
@@ -114,13 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Открываем модальное окно
       document.getElementById("addressesModal").style.display = "block";
-    }); // Закрытие обработчика события
-
-  // Функция для получения проверок за день
-  async function fetchInspections(date) {
-    const resp = await fetch(`/api/inspections?date=${date}`);
-    return resp.ok ? resp.json() : [];
-  }
+    });
 
   // Закрытие модальных окон
   document.querySelectorAll(".close-modal").forEach((btn) => {
